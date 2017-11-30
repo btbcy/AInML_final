@@ -1,2 +1,2 @@
 #!/bin/bash
-python predict.py model.m Train.csv
+python predict.py model.m toTest.csv

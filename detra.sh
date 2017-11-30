@@ -1,2 +1,2 @@
 #!/bin/bash
-sh Default_train.sh Train.csv model.m
+sh Default_train.sh toTrain.csv model.m
