@@ -30,10 +30,8 @@ def discre(data, index,  maximum, minimum, number):
 def transfer(data, hasY = False):
     dataY = []
     if hasY:
-        dataY = data.as_matrix()[:, -1]
+        dataY = data['Y']
         data = data.drop(['Y'], axis=1)
-    data = data.drop(['Train_ID'], axis=1)
-    data = data.drop(['SEX'], axis=1)
     data['BILLaddPAY_1'] = data['BILL_AMT1'] + data['PAY_AMT1']
     data['BILLaddPAY_2'] = data['BILL_AMT2'] + data['PAY_AMT2']
     data['BILLaddPAY_3'] = data['BILL_AMT3'] + data['PAY_AMT3']
@@ -41,6 +39,9 @@ def transfer(data, hasY = False):
     data['BILLaddPAY_5'] = data['BILL_AMT5'] + data['PAY_AMT5']
     data['BILLaddPAY_6'] = data['BILL_AMT6'] + data['PAY_AMT6']
     data['MARcorssAGE'] = data['MARRIAGE'] * data['AGE']
-    data['PAYadd'] = data['PAY_1'] + data['PAY_2'] * 0.8 + data['PAY_3'] * 0.6 + data['PAY_4'] * 0.4 + data['PAY_5'] * 0.2 + data['PAY_6'] * 0.1
+    data = data.drop(['Train_ID'], axis=1)
+    data = data.drop(['SEX'], axis=1)
+    # data = data.drop(['MARRIAGE'], axis=1)
+    # data['PAYadd'] = data['PAY_1'] + data['PAY_2'] * 0.8 + data['PAY_3'] * 0.6 + data['PAY_4'] * 0.4 + data['PAY_5'] * 0.2 + data['PAY_6'] * 0.1
     dataX = data.as_matrix()
     return dataX, dataY
