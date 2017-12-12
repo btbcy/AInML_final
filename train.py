@@ -36,7 +36,7 @@ def get_oof(clf, x_train, y_train, x_test):
 
 trainData = pd.read_csv(sys.argv[1])
 
-trainX, trainY = util.transfer(trainData, hasY=True)
+dataX, dataY= util.transfer(trainData, hasY=True)
 
 # param_test1 = {'max_depth':range(3, 14, 2), 'min_samples_split':range(50, 201, 20)}
 # gsearch1 = GridSearchCV(estimator=ensemble.RandomForestClassifier(n_estimators=130, criterion='entropy', oob_score=True, random_state=10), param_grid=param_test1, iid=False, scoring='roc_auc', cv=5)
@@ -44,56 +44,114 @@ trainX, trainY = util.transfer(trainData, hasY=True)
 # print gsearch1.grid_scores_
 # print gsearch1.best_params_, gsearch1.best_score_
 
-# model = ensemble.RandomForestClassifier(criterion = 'entropy', n_estimators = 130, min_samples_split = 130, max_depth = 13, max_features = 'auto', oob_score = True, random_state = 10)
-# gbc = ensemble.GradientBoostingClassifier(n_estimators = 100, random_state = 10)
-# etc = ensemble.ExtraTreesClassifier(criterion = 'entropy', n_estimators = 130, bootstrap=True, oob_score = True, random_state = 10)
-model = xgb.XGBClassifier(n_estimators = 150)
-# adc = ensemble.AdaBoostClassifier(n_estimators = 50, random_state = 10)
-model.fit(trainX, trainY)
+model = list()
+model.append(ensemble.RandomForestClassifier(criterion = 'entropy', n_estimators = 130, min_samples_split = 130, max_depth = 13, max_features = 'auto', oob_score = True, random_state = 10))
+model.append(ensemble.GradientBoostingClassifier(n_estimators = 100, random_state = 10))
+model.append(ensemble.ExtraTreesClassifier(criterion = 'entropy', n_estimators = 130, bootstrap=True, oob_score = True, random_state = 10))
+model.append(xgb.XGBClassifier(n_estimators = 150))
+# model.append(ensemble.AdaBoostClassifier(n_estimators = 100, random_state = 10))
 # joblib.dump(model, sys.argv[2])
 
 #-------------------------------------------------
-# testData = pd.read_csv("toTest.csv")
-# testX, testY = util.transfer(testData, hasY=True)
-# testX, testY = util.transfer(trainData[:5000], hasY=True)
+isTestPublic = True
 
-testData = pd.read_csv("Test_Public.csv")
-testX, testY = util.transfer(testData, hasY=False)
+if not isTestPublic:
+    # testData = pd.read_csv("toTest.csv")
+    # testX, testY = util.transfer(testData, hasY=True)
 
-# rf_oof_train, rf_oof_test = get_oof(rfc, trainX, trainY, testX)
-# gb_oof_train, gb_oof_test = get_oof(gbc, trainX, trainY, testX)
-# et_oof_train, et_oof_test = get_oof(etc, trainX, trainY, testX)
-# xg_oof_train, xg_oof_test = get_oof(xgc, trainX, trainY, testX)
-# ad_oof_train, ad_oof_test = get_oof(adc, trainX, trainY, testX)
-# base_predictions_train = pd.DataFrame({
-#     'RandomForest': rf_oof_train.ravel(),
-#     'GradientBoost': gb_oof_train.ravel(),
-#     'ExtraTrees': et_oof_train.ravel(),
-#     'XGBoost': xg_oof_train.ravel(),
-#     'AdaBoost': ad_oof_train.ravel()
-# })
-# trainX_2nd = np.concatenate((rf_oof_train, gb_oof_train, et_oof_train, xg_oof_train, ad_oof_train), axis=1)
-# testX_2nd = np.concatenate((rf_oof_test, gb_oof_test, et_oof_test, xg_oof_test, ad_oof_test), axis=1)
-# model = xgb.XGBClassifier(n_estimators = 100)
-# model.fit(trainX, trainY)
+    trainX, testX, trainY, testY = model_selection.train_test_split(dataX, dataY, test_size=0.25, random_state=0)
+    for k in range(0, 101, 50):
+        trainX, testX, trainY, testY = model_selection.train_test_split(dataX, dataY, test_size=0.25, random_state=k)
+        print ""
+        test_prob = list()
+        for i in range(len(model)):
+            model[i].fit(trainX, trainY)
+            test_prob.append(model[i].predict_proba(testX))
+        rankTest = []
+        testY = testY.as_matrix()
+        for index in range(len(testX)):
+            avsum = 0.0
+            for nm in range(len(model)):
+                avsum += test_prob[nm][index][1]
+            avsum /= len(model)
+            rankTest.append([avsum, testY[index]])
+        rankTest = sorted(rankTest, key = lambda x : x[0])
+        rankTest.reverse()
+        print "ekaggle  ", util.avpre(rankTest, 500)
 
-# print model.feature_importances_
-# print "score\t", model.score(testX, testY)
-test_prob = model.predict_proba(testX)
-test_pre = model.predict(testX)
-# print "auc\t", metrics.roc_auc_score(testY, test_prob[:, 1])
+        # model[0].fit(trainX, trainY)
+        # # print adc.feature_importances_
+        # # print "score\t", adc.score(testX, testY)
+        # test_prob1 = model[0].predict_proba(testX)
+        # # print "auc\t", metrics.roc_auc_score(testY, test_prob1[:, 1])
+        # rankTest = []
+        # for index in range(len(testX)):
+        #     rankTest.append([test_prob1[index][1], testY[index]])
+        # rankTest = sorted(rankTest, key = lambda x : x[0])
+        # rankTest.reverse()
+        # print "kaggle\t", util.avpre(rankTest, 500)
 
-rankTest = []
-for index in range(len(testX)):
-    if testY is not None:
-        rankTest.append([index + 1, test_prob[index][1], testY[index]])
-    else:
-        rankTest.append([index + 1, test_prob[index][1], test_pre[index]])
-rankTest = sorted(rankTest, key = lambda x : x[1])
-rankTest.reverse()
-# print "kaggle\t", util.avpre(rankTest, 500)
-rankTest = np.asarray(rankTest)
-public_test = pd.DataFrame({'Rank_ID': rankTest[:, 0]})
-public_test.Rank_ID = public_test.Rank_ID.astype('int')
-public_test.to_csv("public3.csv", index=False)
+        for nm in range(len(model)):
+            rankTest = []
+            for index in range(len(testX)):
+                rankTest.append([test_prob[nm][index][1], testY[index]])
+            rankTest = sorted(rankTest, key = lambda x : x[0])
+            rankTest.reverse()
+            print "model", nm, " ", util.avpre(rankTest, 500), "  ", metrics.roc_auc_score(testY, test_prob[nm][:, 1])
+
+        # model[2].fit(trainX, trainY)
+        # # print rfc.feature_importances_
+        # # print "score\t", rfc.score(testX, testY)
+        # test_prob2 = model[2].predict_proba(testX)
+        # print "auc\t", metrics.roc_auc_score(testY, test_prob2[:, 1])
+        # rankTest = []
+        # for index in range(len(testX)):
+        #     rankTest.append([test_prob2[index][1], testY[index]])
+        # rankTest = sorted(rankTest, key = lambda x : x[0])
+        # rankTest.reverse()
+        # print "kaggle\t", util.avpre(rankTest, 500)
+
+        # print "-------------"
+        # print "av"
+        # rankTest = []
+        # for index in range(len(testX)):
+        #     rankTest.append([(test_prob1[index][1] + test_prob2[index][1]) / 2, testY[index]])
+        # rankTest = sorted(rankTest, key = lambda x : x[0])
+        # rankTest.reverse()
+        # print "kaggle\t", util.avpre(rankTest, 500)
+        # print "-------------"
+else:
+    testData = pd.read_csv("Test_Public.csv")
+    testX, testY = util.transfer(testData, hasY=False)
+
+    test_prob = list()
+    for i in range(len(model)):
+        model[i].fit(dataX, dataY)
+        test_prob.append(model[i].predict_proba(testX))
+    rankTest = []
+    for index in range(len(testX)):
+        avsum = 0.0
+        for nm in range(len(model)):
+            avsum += test_prob[nm][index][1]
+        avsum /= len(model)
+        rankTest.append([index + 1, avsum])
+    rankTest = sorted(rankTest, key = lambda x : x[1])
+    rankTest.reverse()
+    rankTest = np.asarray(rankTest)
+    public_test = pd.DataFrame({'Rank_ID': rankTest[:, 0]})
+    public_test.Rank_ID = public_test.Rank_ID.astype('int')
+    public_test.to_csv("public1.csv", index=False)
+
+    # model.fit(dataX, dataY)
+    # test_prob = model.predict_proba(testX)
+
+    # rankTest = []
+    # for index in range(len(testX)):
+    #     rankTest.append([index + 1, test_prob[index][1]])
+    # rankTest = sorted(rankTest, key = lambda x : x[1])
+    # rankTest.reverse()
+    # rankTest = np.asarray(rankTest)
+    # public_test = pd.DataFrame({'Rank_ID': rankTest[:, 0]})
+    # public_test.Rank_ID = public_test.Rank_ID.astype('int')
+    # public_test.to_csv("public2.csv", index=False)
 

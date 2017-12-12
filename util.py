@@ -34,10 +34,19 @@ def transfer(data, hasY = False):
         data = data.drop(['Y'], axis=1)
     data['MARcorssAGE'] = data['MARRIAGE'] * data['AGE']
     data['USE'] = data['LIMIT_BAL'] - data['BILL_AMT1'] - data['PAY_AMT1']
-    data['LIMIT_AGE'] = data['LIMIT_BAL'] / data['AGE']
+    # data['LIMIT_AGE'] = data['LIMIT_BAL'] / data['AGE']
+    data['PAY_DI'] = data['PAY_1'] - data['PAY_2']
+    # data['PAY_AD'] = data['PAY_1'] + 0.5 * data['PAY_2']
+    data['BILL_DI'] = data['BILL_AMT1'] - data['BILL_AMT2']
+    data['LIMIT_BAL'] = data['LIMIT_BAL'] / 5000
+    data['LIMIT_BAL'] = data['LIMIT_BAL'].astype(int)
+    # data['BILL_AMT1'] = data['BILL_AMT1'] / 100
+    # data['BILL_AMT1'] = data['BILL_AMT1'].astype(int)
 
     data = data.drop(['SEX'], axis=1)
     data = data.drop(['MARRIAGE'], axis=1)
+    # data = data.drop(['LIMIT_BAL'], axis=1)
+    # data = data.drop(['EDUCATION'], axis=1)
     # print data.describe(include='all')
     dataX = data.as_matrix()
     dataX = dataX[:, 1:]
