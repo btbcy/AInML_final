@@ -85,7 +85,7 @@ if not isTestPublic:
         rankTest = sorted(rankTest, key = lambda x : x[0])
         rankTest.reverse()
         print "model", nm, " ", util.avpre(rankTest, 500)
-        # print model[nm].feature_importances_
+        print model[nm].feature_importances_
 
     # model[0].fit(trainX, trainY)
     # # print adc.feature_importances_
