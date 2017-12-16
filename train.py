@@ -1,8 +1,9 @@
 from sklearn import ensemble
+from sklearn import svm
 from sklearn import linear_model
 from sklearn import model_selection
-from sklearn import cross_validation, metrics
-from sklearn.grid_search import GridSearchCV
+from sklearn import metrics
+from sklearn.model_selection import GridSearchCV
 from sklearn.externals import joblib
 import xgboost as xgb
 import pandas as pd
@@ -13,6 +14,7 @@ import sys
 import util
 import warnings
 warnings.filterwarnings('ignore')
+warnings.simplefilter(action='ignore', category=(UserWarning, RuntimeWarning))
 
 def get_oof(clf, x_train, y_train, x_test):
     kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=10)
@@ -38,31 +40,36 @@ trainData = pd.read_csv(sys.argv[1])
 
 dataX, dataY= util.transfer(trainData, hasY=True)
 
-# param_test1 = {'max_depth':range(3, 14, 2), 'min_samples_split':range(50, 201, 20)}
-# gsearch1 = GridSearchCV(estimator=ensemble.RandomForestClassifier(n_estimators=130, criterion='entropy', oob_score=True, random_state=10), param_grid=param_test1, iid=False, scoring='roc_auc', cv=5)
-# gsearch1.fit(trainX, trainY)
-# print gsearch1.grid_scores_
-# print gsearch1.best_params_, gsearch1.best_score_
-
 model = list()
 model.append(ensemble.RandomForestClassifier(criterion = 'entropy', n_estimators = 130, min_samples_split = 130, max_depth = 13, max_features = 'auto', oob_score = True, random_state = 10))
-model.append(ensemble.GradientBoostingClassifier(n_estimators = 100, random_state = 10))
-model.append(ensemble.ExtraTreesClassifier(criterion = 'entropy', n_estimators = 130, bootstrap=True, oob_score = True, random_state = 10))
-model.append(xgb.XGBClassifier(n_estimators = 150))
+model.append(ensemble.GradientBoostingClassifier(n_estimators = 95, min_samples_split=700, max_depth=5, random_state = 10))
+# model.append(ensemble.ExtraTreesClassifier(criterion = 'entropy', n_estimators = 110, bootstrap=True, oob_score = True, random_state = 10))
+# model.append(xgb.XGBClassifier(n_estimators = 150))
 # model.append(ensemble.AdaBoostClassifier(n_estimators = 100, random_state = 10))
+# model.append(svm.SVC(probability=True, random_state=10))
 # joblib.dump(model, sys.argv[2])
 
 #-------------------------------------------------
-isTestPublic = True
+isTestPublic = False
 
 if not isTestPublic:
     # testData = pd.read_csv("toTest.csv")
     # testX, testY = util.transfer(testData, hasY=True)
 
     trainX, testX, trainY, testY = model_selection.train_test_split(dataX, dataY, test_size=0.25, random_state=0)
-    for k in range(0, 101, 50):
+    for k in range(10, 111, 50):
         trainX, testX, trainY, testY = model_selection.train_test_split(dataX, dataY, test_size=0.25, random_state=k)
         print ""
+
+        #---------------
+        # param_test1 = {'max_depth':range(3, 14, 2), 'min_samples_split':range(100, 801, 200)}
+        # gsearch1 = GridSearchCV(estimator=ensemble.GradientBoostingClassifier(learning_rate=0.1, n_estimators=95, min_samples_leaf=20, max_features='sqrt', subsample=0.8, random_state=10), param_grid=param_test1, iid=False, scoring='roc_auc', cv=5)
+        # gsearch1.fit(trainX, trainY)
+        # print gsearch1.grid_scores_
+        # print ""
+        # print gsearch1.best_params_, gsearch1.best_score_
+        #----------------
+
         test_prob = list()
         for i in range(len(model)):
             model[i].fit(trainX, trainY)
@@ -73,7 +80,7 @@ if not isTestPublic:
             avsum = 0.0
             for nm in range(len(model)):
                 avsum += test_prob[nm][index][1]
-            avsum /= len(model)
+            # avsum /= len(model)
             rankTest.append([avsum, testY[index]])
         rankTest = sorted(rankTest, key = lambda x : x[0])
         rankTest.reverse()
@@ -97,7 +104,7 @@ if not isTestPublic:
                 rankTest.append([test_prob[nm][index][1], testY[index]])
             rankTest = sorted(rankTest, key = lambda x : x[0])
             rankTest.reverse()
-            print "model", nm, " ", util.avpre(rankTest, 500), "  ", metrics.roc_auc_score(testY, test_prob[nm][:, 1])
+            print "model", nm, " ", util.avpre(rankTest, 500)
 
         # model[2].fit(trainX, trainY)
         # # print rfc.feature_importances_
@@ -140,7 +147,7 @@ else:
     rankTest = np.asarray(rankTest)
     public_test = pd.DataFrame({'Rank_ID': rankTest[:, 0]})
     public_test.Rank_ID = public_test.Rank_ID.astype('int')
-    public_test.to_csv("public1.csv", index=False)
+    public_test.to_csv("public2.csv", index=False)
 
     # model.fit(dataX, dataY)
     # test_prob = model.predict_proba(testX)

@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas import Series, DataFrame
 import numpy as np
+from math import log
 
 def avpre(data, k):
     sumY = 0.0
@@ -33,20 +34,27 @@ def transfer(data, hasY = False):
         dataY = data['Y']
         data = data.drop(['Y'], axis=1)
     data['MARcorssAGE'] = data['MARRIAGE'] * data['AGE']
-    data['USE'] = data['LIMIT_BAL'] - data['BILL_AMT1'] - data['PAY_AMT1']
-    # data['LIMIT_AGE'] = data['LIMIT_BAL'] / data['AGE']
+    data['USE1'] = data['LIMIT_BAL'] - data['BILL_AMT1'] - data['PAY_AMT1']
+    # data['PdivB'] = data['PAY_AMT1'] / (data['BILL_AMT1'] + 0.001)
+    # data['USE_RATIO'] = data['USE'] / data['LIMIT_BAL']
     data['PAY_DI'] = data['PAY_1'] - data['PAY_2']
-    # data['PAY_AD'] = data['PAY_1'] + 0.5 * data['PAY_2']
-    data['BILL_DI'] = data['BILL_AMT1'] - data['BILL_AMT2']
-    data['LIMIT_BAL'] = data['LIMIT_BAL'] / 5000
-    data['LIMIT_BAL'] = data['LIMIT_BAL'].astype(int)
-    # data['BILL_AMT1'] = data['BILL_AMT1'] / 100
-    # data['BILL_AMT1'] = data['BILL_AMT1'].astype(int)
+    # data['PAY_DI'] = data['PAY_2'] - data['PAY_3']
+    # data['PAY_DI2'] = (data['PAY_1'] - data['PAY_2']) / (data['PAY_1'] + 3)
+    data['BILL_DI1'] = data['BILL_AMT1'] - data['BILL_AMT2']
+    data['BILL_DI12_PAY'] = data['BILL_AMT1'] - data['BILL_AMT2'] - data['PAY_AMT1'] # ?
+    # data['BILL_DI2'] = data['BILL_AMT2'] - data['BILL_AMT3']
+    # data['BILL_LIMIT_RATIO_1'] = data['BILL_AMT1'] / data['LIMIT_BAL']
+
+    data['AGE'] = (data['AGE'] / 5).astype(int)
+    data['LIMIT_BAL'] = (data['LIMIT_BAL'] / 5000).astype(int)
+    # data['PAY_AMT1'] = data['PAY_AMT1'].apply(lambda x: log(x+1))
+
+    temp = pd.DataFrame({})
+    # data['PAY_AVG'] = data['PAY_AMT1'] / (data[['PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6']].mean(axis=1) + 1)
 
     data = data.drop(['SEX'], axis=1)
     data = data.drop(['MARRIAGE'], axis=1)
     # data = data.drop(['LIMIT_BAL'], axis=1)
-    # data = data.drop(['EDUCATION'], axis=1)
     # print data.describe(include='all')
     dataX = data.as_matrix()
     dataX = dataX[:, 1:]
