@@ -18,7 +18,7 @@ rankTest = sorted(rankTest, key = lambda x : -x[1])
 rankTest = np.asarray(rankTest)
 public_test = pd.DataFrame({'Rank_ID': rankTest[:, 0]})
 public_test.Rank_ID = public_test.Rank_ID.astype('int')
-public_test.to_csv('public1.csv', index=False)
+public_test.to_csv('public.csv', index=False)
 
 #--------------------------
 testData = pd.read_csv(sys.argv[3])
