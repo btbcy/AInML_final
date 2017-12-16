@@ -46,7 +46,7 @@ def transfer(data, hasY = False):
     # data['BILL_LIMIT_RATIO_1'] = data['BILL_AMT1'] / data['LIMIT_BAL']
 
     data['AGE'] = (data['AGE'] / 5).astype(int)
-    data['LIMIT_BAL'] = (data['LIMIT_BAL'] / 5000).astype(int)
+    # data['LIMIT_BAL'] = (data['LIMIT_BAL'] / 5000).astype(int)
     # data['PAY_AMT1'] = data['PAY_AMT1'].apply(lambda x: log(x+1))
 
     temp = pd.DataFrame({})
