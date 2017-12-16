@@ -56,6 +56,7 @@ def transfer(data, hasY = False):
     data = data.drop(['MARRIAGE'], axis=1)
     # data = data.drop(['LIMIT_BAL'], axis=1)
     # print data.describe(include='all')
+    # print data.head(0)
     dataX = data.as_matrix()
     dataX = dataX[:, 1:]
     return dataX, dataY

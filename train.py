@@ -40,13 +40,13 @@ dataX, dataY= util.transfer(trainData, hasY=True)
 
 model = list()
 # model.append(ensemble.RandomForestClassifier(criterion='entropy', n_estimators=130, max_depth=12, oob_score=True, random_state=10))
-model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=100, max_depth=16, bootstrap=True, oob_score=True, random_state =10))
+model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=100, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
 model.append(ensemble.GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=10))
 model.append(xgb.XGBClassifier(n_estimators=160, max_depth=4))
 # joblib.dump(model, sys.argv[2])
 
 #-------------------------------------------------
-isTestPublic = True
+isTestPublic = False
 
 if not isTestPublic:
 
@@ -85,6 +85,7 @@ if not isTestPublic:
         rankTest = sorted(rankTest, key = lambda x : x[0])
         rankTest.reverse()
         print "model", nm, " ", util.avpre(rankTest, 500)
+        # print model[nm].feature_importances_
 
     # model[0].fit(trainX, trainY)
     # # print adc.feature_importances_
