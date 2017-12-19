@@ -39,10 +39,11 @@ trainData = pd.read_csv(sys.argv[1])
 dataX, dataY= util.transfer(trainData, hasY=True)
 
 model = list()
-# model.append(ensemble.RandomForestClassifier(criterion='entropy', n_estimators=130, max_depth=12, oob_score=True, random_state=10))
-model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=100, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
+model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=98, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
 model.append(ensemble.GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=10))
-model.append(xgb.XGBClassifier(n_estimators=160, max_depth=4))
+model.append(xgb.XGBClassifier(n_estimators=158, max_depth=4))
+# model.append(ensemble.RandomForestClassifier(criterion='entropy', n_estimators=135, max_depth=12, oob_score=True, random_state=10))
+model.append(ensemble.VotingClassifier(estimators=[('et', model[0]), ('gdb', model[1]), ('xgb', model[2])], voting='soft', weights=[1, 1, 1.4]))
 # joblib.dump(model, sys.argv[2])
 
 #-------------------------------------------------
@@ -52,6 +53,9 @@ if not isTestPublic:
 
     testData = pd.read_csv("Test_PublicA.csv")
     testX, testY = util.transfer(testData, hasY=True)
+
+    for i in range(len(model)):
+        model[i].fit(dataX, dataY)
 
     #---------------
     # param_test1 = {'max_depth':range(3, 14, 2), 'min_samples_split':range(100, 801, 200)}
@@ -64,7 +68,6 @@ if not isTestPublic:
 
     test_prob = list()
     for i in range(len(model)):
-        model[i].fit(dataX, dataY)
         test_prob.append(model[i].predict_proba(testX))
     rankTest = []
     testY = testY.as_matrix()
@@ -76,7 +79,7 @@ if not isTestPublic:
         rankTest.append([avsum, testY[index]])
     rankTest = sorted(rankTest, key = lambda x : x[0])
     rankTest.reverse()
-    print "ekaggle  ", util.avpre(rankTest, 500)
+    # print "ekaggle  ", util.avpre(rankTest, 500)
 
     for nm in range(len(model)):
         rankTest = []
@@ -85,7 +88,7 @@ if not isTestPublic:
         rankTest = sorted(rankTest, key = lambda x : x[0])
         rankTest.reverse()
         print "model", nm, " ", util.avpre(rankTest, 500)
-        print model[nm].feature_importances_
+        # print model[nm].feature_importances_
 
     # model[0].fit(trainX, trainY)
     # # print adc.feature_importances_
@@ -105,7 +108,6 @@ if not isTestPublic:
     print ""
     test_prob = list()
     for i in range(len(model)):
-        model[i].fit(dataX, dataY)
         test_prob.append(model[i].predict_proba(testX))
     rankTest = []
     testY = testY.as_matrix()
@@ -117,7 +119,7 @@ if not isTestPublic:
         rankTest.append([avsum, testY[index]])
     rankTest = sorted(rankTest, key = lambda x : x[0])
     rankTest.reverse()
-    print "ekaggle  ", util.avpre(rankTest, 500)
+    # print "ekaggle  ", util.avpre(rankTest, 500)
 
     for nm in range(len(model)):
         rankTest = []
