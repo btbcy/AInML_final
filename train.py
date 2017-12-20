@@ -1,7 +1,9 @@
 from sklearn import ensemble
-# from sklearn import model_selection
+from sklearn import model_selection
 # from sklearn import metrics
 # from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model.logistic import LogisticRegression
+from sklearn.preprocessing.data import OneHotEncoder
 from sklearn.externals import joblib
 import xgboost as xgb
 import lightgbm as lgb
@@ -40,14 +42,14 @@ trainData = pd.read_csv(sys.argv[1])
 dataX, dataY= util.transfer(trainData, hasY=True)
 
 model = list()
-model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=98, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
-model.append(ensemble.GradientBoostingClassifier(n_estimators=126, max_depth=4, max_leaf_nodes=30, random_state=10))
-model.append(xgb.XGBClassifier(n_estimators=158, max_depth=4))
+# model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=98, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
+# model.append(ensemble.GradientBoostingClassifier(n_estimators=126, max_depth=4, max_leaf_nodes=30, random_state=10))
+# model.append(xgb.XGBClassifier(n_estimators=158, max_depth=4))
 model.append(lgb.LGBMClassifier(n_estimators=125, max_depth=5, num_leaves=100))
 # model.append(ensemble.RandomForestClassifier(criterion='entropy', n_estimators=135, max_depth=12, oob_score=True, random_state=10))
 # model.append(ensemble.GradientBoostingClassifier(n_estimators=100, max_depth=4, random_state=10))
 # model.append(ensemble.VotingClassifier(estimators=[('et', model[0]), ('gdb', model[1]), ('xgb', model[2])], voting='soft', weights=[1, 1, 1.4]))
-model.append(ensemble.VotingClassifier(estimators=[('et', model[0]), ('gdb', model[1]), ('xgb', model[2]), ('lgb', model[3])], voting='soft', weights=[1, 1, 1, 1]))
+# model.append(ensemble.VotingClassifier(estimators=[('et', model[0]), ('gdb', model[1]), ('xgb', model[2]), ('lgb', model[3])], voting='soft', weights=[1, 1, 1, 1]))
 # joblib.dump(model, sys.argv[2])
 
 #-------------------------------------------------
@@ -58,8 +60,37 @@ if not isTestPublic:
     testData = pd.read_csv("Test_PublicA.csv")
     testX, testY = util.transfer(testData, hasY=True)
 
+    lr = lgb.LGBMClassifier(n_estimators=1000, max_depth=6, num_leaves=100)
+    data_leavesX = []
+    test_leavesX = []
     for i in range(len(model)):
         model[i].fit(dataX, dataY)
+        train_leaves = model[i].apply(dataX)
+        test_leaves = model[i].apply(testX)
+        leaves = np.concatenate((train_leaves, test_leaves), axis=0)
+
+        if len(leaves.shape) > 2:
+            data_leavesX.append(leaves[:, :, 0])
+        else:
+            data_leavesX.append(leaves)
+        data_leavesX[i] = data_leavesX[i].astype(np.int32)
+        rows, cols = data_leavesX[i].shape
+        cum_count = np.zeros((1, cols), dtype=np.int32)
+        cum_count[0][0] = len(np.unique(data_leavesX[i][:, 0]))
+        for idx in range(1, cols):
+            cum_count[0][idx] = len(np.unique(data_leavesX[i][:, idx])) + cum_count[0][idx-1]
+        transXdict = {}
+        for bbb in range(cols):
+            initial_index = cum_count[0][bbb-1] + 1 if bbb != 0 else 1
+            for aaa in range(rows):
+                if data_leavesX[i][aaa, bbb] not in transXdict:
+                    transXdict[data_leavesX[i][aaa, bbb]] = initial_index
+                    data_leavesX[i][aaa, bbb] = initial_index
+                    initial_index += 1
+                else:
+                    data_leavesX[i][aaa, bbb] = transXdict[data_leavesX[i][aaa, bbb]]
+        test_leavesX.append(data_leavesX[i][len(dataX):, :])
+        data_leavesX[i] = data_leavesX[i][:len(dataX), :]
 
     #---------------
     # param_test1 = {'max_depth':range(3, 14, 2), 'min_samples_split':range(100, 801, 200)}
@@ -72,27 +103,24 @@ if not isTestPublic:
 
     test_prob = list()
     for i in range(len(model)):
-        test_prob.append(model[i].predict_proba(testX))
-    rankTest = []
-    testY = testY.as_matrix()
-    for index in range(len(testX)):
-        avsum = 0.0
-        for nm in range(len(model)):
-            avsum += test_prob[nm][index][1]
-        # avsum /= len(model)
-        rankTest.append([avsum, testY[index]])
-    rankTest = sorted(rankTest, key = lambda x : x[0])
-    rankTest.reverse()
-    # print "ekaggle  ", util.avpre(rankTest, 500)
+        test_prob.append(model[i].predict_proba(testX)[:, 1])
 
     for nm in range(len(model)):
         rankTest = []
         for index in range(len(testX)):
-            rankTest.append([test_prob[nm][index][1], testY[index]])
-        rankTest = sorted(rankTest, key = lambda x : x[0])
-        rankTest.reverse()
+            rankTest.append([test_prob[nm][index], testY[index]])
+        rankTest = sorted(rankTest, key = lambda x : -x[0])
         print "model", nm, " ", util.avpre(rankTest, 500)
         # print model[nm].feature_importances_
+
+    for i in range(len(model)):
+        lr.fit(data_leavesX[i], dataY)
+        prob2nd = lr.predict_proba(test_leavesX[i])[:, 1]
+        rankTest = []
+        for index in range(len(testX)):
+            rankTest.append([prob2nd[index], testY[index]])
+        rankTest = sorted(rankTest, key = lambda x : -x[0])
+        print "model", nm, " ", util.avpre(rankTest, 500)
 
     # model[0].fit(trainX, trainY)
     # # print adc.feature_importances_
@@ -113,24 +141,12 @@ if not isTestPublic:
     test_prob = list()
     for i in range(len(model)):
         test_prob.append(model[i].predict_proba(testX))
-    rankTest = []
-    testY = testY.as_matrix()
-    for index in range(len(testX)):
-        avsum = 0.0
-        for nm in range(len(model)):
-            avsum += test_prob[nm][index][1]
-        # avsum /= len(model)
-        rankTest.append([avsum, testY[index]])
-    rankTest = sorted(rankTest, key = lambda x : x[0])
-    rankTest.reverse()
-    # print "ekaggle  ", util.avpre(rankTest, 500)
 
     for nm in range(len(model)):
         rankTest = []
         for index in range(len(testX)):
             rankTest.append([test_prob[nm][index][1], testY[index]])
-        rankTest = sorted(rankTest, key = lambda x : x[0])
-        rankTest.reverse()
+        rankTest = sorted(rankTest, key = lambda x : -x[0])
         print "model", nm, " ", util.avpre(rankTest, 500)
 
 else:
