@@ -40,7 +40,7 @@ trainData = pd.read_csv(sys.argv[1])
 dataX, dataY= util.transfer(trainData, hasY=True)
 
 model = list()
-model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=98, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
+model.append(ensemble.ExtraTreesClassifier(criterion='entropy', n_estimators=158, max_depth=16, bootstrap=True, oob_score=True, random_state=10))
 model.append(ensemble.GradientBoostingClassifier(n_estimators=126, max_depth=4, max_leaf_nodes=30, random_state=10))
 model.append(xgb.XGBClassifier(n_estimators=158, max_depth=4))
 model.append(lgb.LGBMClassifier(n_estimators=125, max_depth=5, num_leaves=100))
