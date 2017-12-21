@@ -1,3 +1,11 @@
+# predict.py
+#
+# USAGE
+# python2.7 predict.py <model> <testing public data> <testing private data>
+# ex. python2.7 predict.py model.m Test_Public.csv Test_Private.csv
+# input: model.m, Test_Public.csv, Test_Private.csv
+# output: public.csv, private.csv
+
 from sklearn.externals import joblib
 import pandas as pd
 from pandas import Series, DataFrame

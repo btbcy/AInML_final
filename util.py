@@ -1,3 +1,7 @@
+# util.py
+#
+# called by train.py and predict.py
+
 import pandas as pd
 from pandas import Series, DataFrame
 import numpy as np

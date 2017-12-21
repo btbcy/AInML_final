@@ -1,3 +1,11 @@
+# train.py
+#
+# USAGE
+# python2.7 train.py <training data>
+# ex. python2.7 train.py Train.csv
+# input: Train.csv
+# output: model.m
+
 from sklearn import ensemble
 from sklearn.externals import joblib
 import xgboost as xgb
